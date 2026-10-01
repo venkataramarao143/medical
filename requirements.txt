@@ -11,3 +11,4 @@ python-dotenv==1.0.0
 dnspython==2.8.0
 certifi
 groq
+gunicorn==21.2.0

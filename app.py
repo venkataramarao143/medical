@@ -98,8 +98,10 @@ def create_app():
     return app
 
 
+app = create_app()
+
+
 if __name__ == '__main__':
-    app = create_app()
     print("\n" + "="*55)
     print("  MedAnnotate -- Production Server")
     print("="*55)
@@ -111,3 +113,4 @@ if __name__ == '__main__':
     print("  Open: http://localhost:5000/api/admin/seed")
     print("="*55 + "\n")
     app.run(debug=True, host='0.0.0.0', port=5000)
+
