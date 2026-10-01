@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload Images — MedAnnotate</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+<div class="page-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🤖</div><div><div class="logo-text">MedAnnotate</div><div class="logo-sub">Company Portal</div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="/company/dashboard" class="nav-item"><i class="fa fa-gauge"></i> Dashboard</a>
+      <a href="/company/upload" class="nav-item active"><i class="fa fa-upload"></i> Upload Images</a>
+      <a href="/company/batches" class="nav-item"><i class="fa fa-layer-group"></i> My Batches</a>
+    </nav>
+    <div class="sidebar-footer"><button class="logout-btn" onclick="logout()"><i class="fa fa-right-from-bracket"></i> Sign Out</button></div>
+  </aside>
+
+  <header class="navbar">
+    <div class="navbar-left"><div><div class="page-title">Upload Image Batch</div></div></div>
+    <div class="navbar-right">
+      <div class="user-pill"><div class="user-avatar" id="nav-user-avatar" style="background:linear-gradient(135deg,var(--purple),#5b21b6);">AI</div><div><div class="user-name" id="nav-user-name">Company</div><div class="user-role" id="nav-user-role">AI Company</div></div></div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <div class="grid-2" style="gap:24px;align-items:start;">
+
+      <!-- LEFT: Upload + File List -->
+      <div>
+        <div class="alert alert-success"><i class="fa fa-lock"></i> All uploaded images are automatically anonymized — patient names, IDs, and metadata are stripped before storage.</div>
+
+        <!-- DROP ZONE -->
+        <div class="upload-zone" id="drop-zone">
+          <i class="fa fa-cloud-arrow-up"></i>
+          <h3>Drag & Drop Medical Images</h3>
+          <p>Supports DICOM, JPG, PNG, TIFF &mdash; Multiple files allowed</p>
+          <label class="btn btn-purple" style="margin-top:16px;cursor:pointer;">
+            <i class="fa fa-folder-open"></i> Browse Files
+            <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.dcm,.dicom,.tiff,.tif" style="display:none;" />
+          </label>
+        </div>
+
+        <!-- FILE LIST -->
+        <div id="file-list" style="margin-top:16px;display:flex;flex-direction:column;gap:8px;"></div>
+
+        <!-- UPLOAD PROGRESS -->
+        <div id="upload-progress-section" style="display:none;margin-top:16px;">
+          <div class="card">
+            <div class="card-header"><span class="card-title"><i class="fa fa-spinner fa-spin"></i> Uploading...</span><span id="upload-progress-text">0 / 0</span></div>
+            <div class="progress-bar" style="height:8px;"><div class="progress-fill" id="upload-bar" style="width:0%;"></div></div>
+            <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:8px;" id="upload-current-file">Preparing...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Config Panel -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-header"><span class="card-title"><i class="fa fa-brain"></i> Department Detection</span></div>
+
+          <div class="toggle-switch" onclick="toggleAutoDetect()" style="margin-bottom:16px;">
+            <div class="toggle-track on" id="toggle-track"><div class="toggle-thumb"></div></div>
+            <div>
+              <div style="font-size:0.875rem;font-weight:600;">Auto-Detect Department (AI)</div>
+              <div style="font-size:0.75rem;color:var(--text-secondary);">Automatically classify image type</div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Manual Override / Department</label>
+            <select id="department" class="form-select">
+              <option value="">— Auto Detect —</option>
+              <option>Radiology</option>
+              <option>Dermatology</option>
+              <option>Neurology</option>
+              <option>Oncology</option>
+              <option>Ophthalmology</option>
+              <option>Cardiology</option>
+              <option>Orthopedics</option>
+              <option>Pathology</option>
+              <option>Gastroenterology</option>
+              <option>Pulmonology</option>
+            </select>
+          </div>
+
+          <div id="detection-preview" style="display:none;" class="alert alert-info">
+            <i class="fa fa-robot"></i> <span id="detection-result-text">Detecting...</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title"><i class="fa fa-gear"></i> Job Settings</span></div>
+          <div class="form-group">
+            <label class="form-label">Batch Name</label>
+            <input type="text" id="batch-name" class="form-input" placeholder="e.g. Chest X-Ray Batch #12" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Priority</label>
+            <select id="priority" class="form-select">
+              <option value="normal">Normal</option>
+              <option value="high">High Priority (+20%)</option>
+              <option value="urgent">Urgent (+50%)</option>
+            </select>
+          </div>
+          <div style="background:var(--bg-secondary);border-radius:8px;padding:14px;margin-top:4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:0.8rem;color:var(--text-secondary);">Files Selected</span>
+              <span style="font-weight:700;" id="file-count">0</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:0.8rem;color:var(--text-secondary);">Estimated Cost</span>
+              <span style="font-weight:700;color:var(--gold);" id="est-cost">$0.00</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:0.8rem;color:var(--text-secondary);">Est. Completion</span>
+              <span style="font-weight:600;color:var(--cyan);" id="est-time">—</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-purple" style="width:100%;justify-content:center;padding:14px;" id="upload-btn" onclick="startUpload()" disabled>
+          <i class="fa fa-upload"></i> <span id="upload-btn-text">Start Upload</span>
+        </button>
+        <a href="/company/dashboard" class="btn btn-ghost" style="width:100%;justify-content:center;">Cancel</a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/upload.js"></script>
+</body>
+</html>

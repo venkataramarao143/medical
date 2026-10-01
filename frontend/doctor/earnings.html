@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Earnings & History — MedAnnotate</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body { background: #060b16; }
+    .tab { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 8px 18px; cursor: pointer; font-size: 0.875rem; color: var(--text-secondary); transition: all 0.2s; }
+    .tab.active { background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(124,58,237,0.1)); border-color: var(--cyan); color: var(--cyan); }
+    .hcard { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; align-items: flex-start; gap: 14px; transition: all 0.2s; animation: fadeIn 0.3s ease; }
+    .hcard:hover { border-color: var(--cyan-dim); transform: translateY(-1px); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+<div class="bg-canvas"><div class="bg-orb bg-orb-1"></div><div class="bg-orb bg-orb-2"></div></div>
+<div class="grid-lines"></div>
+<div class="page-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-icon">🩺</div><div><div class="logo-text">MedAnnotate</div><div class="logo-sub">Doctor Portal</div></div></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="/doctor/dashboard"       class="nav-item"><i class="fa fa-gauge"></i> Dashboard</a>
+      <a href="/doctor/dashboard#queue" class="nav-item"><i class="fa fa-images"></i> Image Queue</a>
+      <a href="/doctor/earnings"        class="nav-item active"><i class="fa fa-dollar-sign"></i> Earnings & History</a>
+      <div class="nav-section-label">Account</div>
+      <a href="#" class="nav-item" onclick="showProfile()"><i class="fa fa-user"></i> My Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="padding:10px 8px;margin-bottom:8px">
+        <div style="font-size:0.875rem;font-weight:600" id="sf-name">Doctor</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary)" id="sf-specialty"></div>
+        <span class="badge badge-green" style="margin-top:4px">Verified</span>
+      </div>
+      <button class="logout-btn" onclick="logout()"><i class="fa fa-right-from-bracket"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <header class="navbar">
+    <div class="navbar-left"><div><div class="page-title">Earnings & History</div><div class="page-subtitle" id="today-date"></div></div></div>
+    <div class="navbar-right">
+      <div class="user-pill">
+        <div class="user-avatar" id="nav-user-avatar">DR</div>
+        <div><div class="user-name" id="nav-user-name">Doctor</div><div class="user-role" id="nav-user-role">Specialist</div></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- STATS -->
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat-card green"><div class="stat-info"><div class="stat-value" id="e-paid">$0</div><div class="stat-label">Total Paid</div></div><div class="stat-icon green"><i class="fa fa-circle-check"></i></div></div>
+      <div class="stat-card gold"><div class="stat-info"><div class="stat-value" id="e-pending">$0</div><div class="stat-label">Pending Payment</div></div><div class="stat-icon gold"><i class="fa fa-clock"></i></div></div>
+      <div class="stat-card blue"><div class="stat-info"><div class="stat-value" id="e-total">$0</div><div class="stat-label">Total Earnings</div></div><div class="stat-icon blue"><i class="fa fa-dollar-sign"></i></div></div>
+      <div class="stat-card purple"><div class="stat-info"><div class="stat-value" id="e-count">0</div><div class="stat-label">Total Annotated</div></div><div class="stat-icon purple"><i class="fa fa-pen-nib"></i></div></div>
+    </div>
+
+    <!-- CHARTS -->
+    <div class="grid-2" style="gap:20px;margin-bottom:24px">
+      <div class="card">
+        <div class="card-header"><span class="card-title"><i class="fa fa-chart-line"></i> Earnings Timeline</span></div>
+        <div style="height:200px"><canvas id="earningsChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title"><i class="fa fa-chart-pie"></i> Annotation Status</span></div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div style="height:180px;flex:1"><canvas id="statusChart"></canvas></div>
+          <div style="min-width:130px" id="status-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <button class="tab active" id="tab-history" onclick="switchTab('history')"><i class="fa fa-clock-rotate-left"></i> Annotation History</button>
+      <button class="tab" id="tab-payouts" onclick="switchTab('payouts')"><i class="fa fa-money-bill-wave"></i> Payout Records</button>
+    </div>
+
+    <!-- HISTORY PANEL -->
+    <div id="panel-history">
+      <div id="history-list">
+        <div style="text-align:center;padding:40px"><span class="spinner"></span><p style="margin-top:12px;color:var(--text-muted)">Loading history...</p></div>
+      </div>
+    </div>
+
+    <!-- PAYOUTS PANEL -->
+    <div id="panel-payouts" style="display:none">
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Image</th><th>Department</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="payouts-tbody"><tr><td colspan="5" style="text-align:center;padding:32px"><span class="spinner"></span></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ANNOTATION DETAIL MODAL (with image preview) -->
+<div id="ann-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);align-items:center;justify-content:center">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;width:660px;max-width:94vw;max-height:90vh;overflow-y:auto;padding:28px;position:relative">
+    <button onclick="closeAnnModal()" style="position:absolute;top:16px;right:16px;background:var(--bg-secondary);border:none;color:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer">✕</button>
+    <div id="ann-modal-content">Loading...</div>
+  </div>
+</div>
+
+<!-- IMAGE VIEWER -->
+<div id="img-full-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);align-items:center;justify-content:center;flex-direction:column">
+  <button onclick="document.getElementById('img-full-modal').style.display='none'" style="position:absolute;top:20px;right:20px;background:var(--bg-secondary);border:none;color:#fff;border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:1.1rem;display:grid;place-items:center">✕</button>
+  <img id="full-view-img" style="max-width:92vw;max-height:88vh;border-radius:12px;object-fit:contain" alt="" />
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const user = requireAuth(['doctor']);
+  if (!user) return;
+  initNavbar(user);
+
+  setEl('sf-name',      user.name);
+  setEl('sf-specialty', user.specialty || '');
+  setEl('today-date',   new Date().toLocaleDateString('en-US', {weekday:'long',month:'long',day:'numeric'}));
+
+  await Promise.all([loadStats(), loadHistory(), loadPayouts()]);
+});
+
+// ── STATS ──────────────────────────────────────────────
+async function loadStats() {
+  const res = await api.get('/annotations/my-stats');
+  if (!res?.ok) return;
+  const d = res.data;
+
+  const paid    = d.earnings?.paid    || 0;
+  const pending = d.earnings?.pending || 0;
+  const total   = d.earnings?.total   || 0;
+  const approved  = d.annotations?.approved  || d.approved  || 0;
+  const submitted = d.annotations?.submitted || d.pending_qa|| 0;
+  const rejected  = d.annotations?.rejected  || 0;
+  const draft     = d.annotations?.draft     || 0;
+
+  setEl('e-paid',    formatMoney(paid));
+  setEl('e-pending', formatMoney(pending));
+  setEl('e-total',   formatMoney(total));
+  setEl('e-count',   approved + submitted + draft);
+
+  // Donut
+  const ctx2 = document.getElementById('statusChart');
+  new Chart(ctx2, {
+    type: 'doughnut',
+    data: {
+      labels: ['Approved','In Review','Rejected','Draft'],
+      datasets: [{ data: [approved, submitted, rejected, draft],
+        backgroundColor: ['#22c55e','#f59e0b','#ef4444','#6b7280'],
+        borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { display: false } } }
+  });
+
+  document.getElementById('status-legend').innerHTML = [
+    ['#22c55e','Approved', approved],
+    ['#f59e0b','In Review', submitted],
+    ['#ef4444','Rejected',  rejected],
+    ['#6b7280','Draft',     draft]
+  ].map(([c,l,v]) => `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+    <div style="width:10px;height:10px;border-radius:50%;background:${c};flex-shrink:0"></div>
+    <span style="font-size:0.8rem;flex:1">${l}</span>
+    <b style="font-size:0.85rem">${v}</b></div>`).join('');
+
+  // Line chart
+  new Chart(document.getElementById('earningsChart'), {
+    type: 'line',
+    data: {
+      labels: ['Oct','Nov','Dec','Jan','Feb','Mar'],
+      datasets: [{ label: 'Earnings ($)',
+        data: [120, 80, 200, 160, 240, total],
+        borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.1)',
+        fill: true, tension: 0.4, pointBackgroundColor: '#00d4ff', pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => '$' + c.raw } } },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#8899aa' } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#8899aa', callback: v => '$' + v } }
+      }
+    }
+  });
+}
+
+// ── REAL ANNOTATION HISTORY FROM DB ────────────────────
+async function loadHistory() {
+  const container = document.getElementById('history-list');
+  const res = await api.get('/annotations/history?per_page=50');
+
+  if (!res?.ok || !res.data.annotations?.length) {
+    container.innerHTML = `<div style="text-align:center;padding:60px;color:var(--text-muted)">
+      <i class="fa fa-inbox" style="font-size:3rem;opacity:0.3;display:block;margin-bottom:16px"></i>
+      <h3>No annotations yet</h3>
+      <p>Your history appears here after you annotate images.</p>
+      <a href="/doctor/dashboard#queue" class="btn btn-primary" style="display:inline-flex;margin-top:16px"><i class="fa fa-play"></i> Start Annotating</a>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = `<div style="display:flex;flex-direction:column;gap:12px">` +
+    res.data.annotations.map(ann => {
+      const imgId = ann.image_id;
+      return `<div class="hcard">
+        <div style="width:52px;height:52px;border-radius:10px;background:var(--bg-secondary);display:grid;place-items:center;flex-shrink:0;border:1px solid var(--border);overflow:hidden;position:relative">
+          <img id="hthumb-${ann.id}" style="width:100%;height:100%;object-fit:cover;display:none" alt="" />
+          <i class="fa fa-file-medical" style="color:var(--cyan);font-size:1.2rem;position:absolute" id="hicon-${ann.id}"></i>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-weight:700;font-size:0.9rem;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(ann.image_filename || 'Medical Image')}</span>
+            ${statusBadge(ann.status)}
+          </div>
+          <div style="font-size:0.78rem;color:var(--text-secondary);display:flex;gap:12px;flex-wrap:wrap">
+            <span><i class="fa fa-tag" style="opacity:0.5;margin-right:4px"></i>${escHtml(ann.department||'—')}</span>
+            <span><i class="fa fa-clock" style="opacity:0.5;margin-right:4px"></i>${timeAgo(ann.updated_at||ann.created_at)}</span>
+            ${ann.labels?.length ? `<span><i class="fa fa-tags" style="opacity:0.5;margin-right:4px"></i>${escHtml(ann.labels.slice(0,3).join(', '))}</span>` : ''}
+            ${ann.confidence ? `<span><i class="fa fa-gauge" style="opacity:0.5;margin-right:4px"></i>${ann.confidence}% confidence</span>` : ''}
+            ${ann.time_spent_sec ? `<span><i class="fa fa-stopwatch" style="opacity:0.5;margin-right:4px"></i>${Math.floor(ann.time_spent_sec/60)}m ${ann.time_spent_sec%60}s</span>` : ''}
+          </div>
+          ${ann.notes ? `<div style="margin-top:5px;font-size:0.78rem;color:var(--text-muted);background:var(--bg-secondary);border-radius:6px;padding:5px 10px;border-left:2px solid var(--cyan)">${escHtml(ann.notes.slice(0,120))}${ann.notes.length>120?'...':''}</div>` : ''}
+          ${ann.qa_comment ? `<div style="margin-top:5px;font-size:0.75rem;color:var(--text-muted)"><i class="fa fa-comment" style="margin-right:4px"></i><em>${escHtml(ann.qa_comment)}</em></div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+          ${ann.status === 'qa_approved' ? `<span style="color:var(--green);font-weight:700">+$4.00</span>` : ''}
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="viewAnnotationDetail('${ann.id||ann._id}','${imgId||''}')"><i class="fa fa-magnifying-glass"></i> View Details</button>
+            <button class="btn btn-ghost btn-sm" onclick="openFullImage('${imgId}')"><i class="fa fa-eye"></i> View Image</button>
+          </div>
+          ${imgId && !['qa_review','qa_approved','revoked'].includes(ann.status) ? `
+            <a href="/doctor/annotate?id=${imgId}" class="btn btn-primary btn-sm" style="width:100%"><i class="fa fa-pen"></i> Edit Annotation</a>` : ''}
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+
+  res.data.annotations.forEach(ann => {
+    if (ann.image_id) loadHistoryThumb(ann.id || ann._id, ann.image_id);
+  });
+}
+
+async function loadHistoryThumb(annId, imgId) {
+  const imgEl  = document.getElementById(`hthumb-${annId}`);
+  const iconEl = document.getElementById(`hicon-${annId}`);
+  if (!imgEl || !imgId) return;
+  try {
+    const token = getToken();
+    const resp  = await fetch(`/api/images/${imgId}/file`, { headers: {'Authorization': `Bearer ${token}`} });
+    if (!resp.ok) return;
+    const blob    = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    imgEl.src = blobUrl;
+    imgEl.style.display = 'block';
+    if (iconEl) iconEl.style.display = 'none';
+    imgEl.onload = () => URL.revokeObjectURL(blobUrl);
+  } catch(e) {}
+}
+
+// ── VIEW ANNOTATION DETAIL MODAL ────────────────────────
+async function viewAnnotationDetail(annId, imgId) {
+  const modal   = document.getElementById('ann-modal');
+  const content = document.getElementById('ann-modal-content');
+  modal.style.display = 'flex';
+  content.innerHTML = '<div style="text-align:center;padding:40px"><span class="spinner"></span></div>';
+
+  const [annRes, imgRes] = await Promise.all([
+    api.get(`/annotations/image/${imgId}`),
+    imgId ? api.get(`/images/${imgId}`) : Promise.resolve({ok:false})
+  ]);
+
+  const ann = annRes?.ok ? annRes.data.annotation : null;
+  const img = imgRes?.ok ? imgRes.data : null;
+
+  if (!ann) {
+    content.innerHTML = '<p style="text-align:center;color:var(--text-muted);padding:40px">Could not load annotation data.</p>';
+    return;
+  }
+
+  content.innerHTML = `
+    <div style="margin-bottom:20px">
+      <h3 style="margin:0 0 6px;font-size:1.1rem">${escHtml(ann.image_filename || 'Medical Image')}</h3>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <span class="badge badge-cyan">${escHtml(ann.department||'—')}</span>
+        ${statusBadge(ann.status)}
+      </div>
+    </div>
+
+    <!-- Image Preview -->
+    <div id="ann-img-wrap" style="background:var(--bg-secondary);border-radius:12px;overflow:hidden;margin-bottom:20px;text-align:center;min-height:100px;display:flex;align-items:center;justify-content:center;cursor:zoom-in"
+         onclick="openFullImage('${imgId}')">
+      <img id="ann-modal-img" style="max-width:100%;max-height:300px;border-radius:8px;object-fit:contain;display:none" alt="" />
+      <div id="ann-img-loading" style="padding:30px;color:var(--text-muted)"><span class="spinner" style="display:block;margin:0 auto 10px"></span>Loading image...</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      ${ibox('fa-tags','Labels',(ann.labels||[]).join(', ')||'None')}
+      ${ibox('fa-gauge','Confidence',(ann.confidence||0)+'%')}
+      ${ibox('fa-calendar','Submitted',formatDate(ann.submitted_at||ann.created_at))}
+      ${ibox('fa-stopwatch','Time Spent',ann.time_spent_sec ? Math.floor(ann.time_spent_sec/60)+'m '+ann.time_spent_sec%60+'s' : '—')}
+    </div>
+
+    ${ann.notes ? `<div style="background:var(--bg-secondary);border-radius:10px;padding:14px;margin-bottom:12px;border-left:3px solid var(--cyan)">
+      <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">CLINICAL NOTES</div>
+      <p style="margin:0;font-size:0.875rem;line-height:1.5">${escHtml(ann.notes)}</p>
+    </div>` : ''}
+
+    ${ann.qa_comment ? `<div style="background:rgba(239,68,68,0.08);border-radius:10px;padding:14px;border-left:3px solid #ef4444">
+      <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">QA FEEDBACK</div>
+      <p style="margin:0;font-size:0.875rem">${escHtml(ann.qa_comment)}</p>
+    </div>` : ''}
+
+    ${ann.bounding_boxes?.length ? `<div style="margin-top:12px">
+      <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:6px">BOUNDING BOXES (${ann.bounding_boxes.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        ${ann.bounding_boxes.map(b => `<span class="badge badge-cyan" style="font-size:0.7rem">${escHtml(b.label||'—')} (${Math.round(b.w||0)}×${Math.round(b.h||0)})</span>`).join('')}
+      </div>
+    </div>` : ''}`;
+
+  loadAnnoModalImg(imgId);
+}
+
+async function loadAnnoModalImg(imgId) {
+  const imgEl   = document.getElementById('ann-modal-img');
+  const loadEl  = document.getElementById('ann-img-loading');
+  if (!imgEl || !imgId) return;
+  try {
+    const token = getToken();
+    const resp  = await fetch(`/api/images/${imgId}/file`, { headers: {'Authorization': `Bearer ${token}`} });
+    if (!resp.ok) throw new Error();
+    const blob    = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    imgEl.src = blobUrl;
+    imgEl.style.display = 'block';
+    if (loadEl) loadEl.style.display = 'none';
+    imgEl.onload = () => URL.revokeObjectURL(blobUrl);
+  } catch(e) {
+    if (loadEl) loadEl.innerHTML = '<i class="fa fa-file-medical" style="font-size:2rem;opacity:0.4;display:block;margin-bottom:8px"></i>DICOM — Click to view in viewer';
+  }
+}
+
+async function openFullImage(imgId) {
+  const modal = document.getElementById('img-full-modal');
+  const imgEl = document.getElementById('full-view-img');
+  imgEl.src = '';
+  modal.style.display = 'flex';
+  try {
+    const token = getToken();
+    const resp  = await fetch(`/api/images/${imgId}/file`, { headers: {'Authorization': `Bearer ${token}`} });
+    if (!resp.ok) throw new Error();
+    const blob    = await resp.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    imgEl.src = blobUrl;
+    imgEl.onload = () => URL.revokeObjectURL(blobUrl);
+  } catch(e) { modal.style.display = 'none'; showToast('Image preview not available for this format', 'warning'); }
+}
+
+function ibox(icon, label, val) {
+  return `<div style="background:var(--bg-secondary);border-radius:8px;padding:12px;border:1px solid var(--border)">
+    <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:4px"><i class="fa ${icon}" style="margin-right:4px"></i>${label}</div>
+    <div style="font-size:0.875rem;font-weight:600">${escHtml(String(val))}</div>
+  </div>`;
+}
+
+function closeAnnModal() { document.getElementById('ann-modal').style.display = 'none'; }
+
+// ── PAYOUT RECORDS FROM DB ─────────────────────────────
+async function loadPayouts() {
+  const tbody = document.getElementById('payouts-tbody');
+  const res   = await api.get('/annotations/payouts?per_page=50');
+  if (!res?.ok || !res.data.payouts?.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)">
+      <i class="fa fa-money-bill-wave" style="display:block;font-size:2rem;margin-bottom:10px;opacity:0.3"></i>
+      No payout records yet</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = res.data.payouts.map(p => `<tr>
+    <td style="font-size:0.8rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.image_filename||'—')}</td>
+    <td><span class="badge badge-cyan">${escHtml(p.department||'—')}</span></td>
+    <td style="color:var(--gold);font-weight:700">$${Number(p.amount||0).toFixed(2)}</td>
+    <td>${p.status === 'paid'
+      ? '<span class="badge badge-green"><i class="fa fa-check"></i> Paid</span>'
+      : '<span class="badge badge-gold"><i class="fa fa-clock"></i> Pending</span>'}</td>
+    <td style="color:var(--text-secondary);font-size:0.8rem">${timeAgo(p.created_at)}</td>
+  </tr>`).join('');
+}
+
+function switchTab(tab) {
+  ['history','payouts'].forEach(t => {
+    document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`panel-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+function showProfile() {
+  api.get('/auth/me').then(res => {
+    if (!res?.ok) return;
+    const u = res.data;
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px)';
+    modal.innerHTML = `<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:32px;width:400px;max-width:90vw;position:relative">
+      <button onclick="this.closest('[style*=fixed]').remove()" style="position:absolute;top:16px;right:16px;background:var(--bg-secondary);border:none;color:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer">✕</button>
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--cyan),var(--purple));display:grid;place-items:center;font-size:1.5rem;font-weight:800;color:#fff;margin:0 auto 12px">${(u.name||'D').slice(0,2).toUpperCase()}</div>
+        <h2 style="margin:0 0 4px">Dr. ${escHtml(u.name)}</h2>
+        <div style="color:var(--cyan)">${escHtml(u.specialty||'Specialist')}</div>
+        ${u.verified ? '<span class="badge badge-green" style="margin-top:8px;display:inline-flex">✓ Verified</span>' : ''}
+      </div>
+      <div style="display:grid;gap:10px">
+        <div style="background:var(--bg-secondary);border-radius:8px;padding:12px"><div style="font-size:0.7rem;color:var(--text-muted)">Email</div><div>${escHtml(u.email)}</div></div>
+        <div style="background:var(--bg-secondary);border-radius:8px;padding:12px"><div style="font-size:0.7rem;color:var(--text-muted)">License</div><div>${escHtml(u.license_number||'N/A')}</div></div>
+        <div style="background:var(--bg-secondary);border-radius:8px;padding:12px"><div style="font-size:0.7rem;color:var(--text-muted)">Total Earnings</div><div style="color:var(--gold);font-weight:700">${formatMoney(u.total_earnings||0)}</div></div>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  });
+}
+
+function setEl(id, val) { const e = document.getElementById(id); if (e) e.textContent = String(val||''); }
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>

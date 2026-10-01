@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register — MedAnnotate</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>body{background:#060b16;}</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+<div class="bg-canvas">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+  <div class="bg-orb bg-orb-4"></div>
+</div>
+<div class="grid-lines"></div>
+<canvas id="particles-canvas"></canvas>
+<div class="auth-page" style="padding:40px 20px;">
+  <div class="auth-container" style="max-width:520px;">
+    <div class="auth-logo">
+      <div class="logo-icon" style="width:52px;height:52px;font-size:1.6rem;margin:0 auto 12px;border-radius:14px;background:linear-gradient(135deg,var(--cyan),var(--purple));display:grid;place-items:center;">🩺</div>
+      <h1>MedAnnotate</h1>
+      <p>Create your account</p>
+    </div>
+    <div class="auth-card">
+      <!-- Role Selector -->
+      <div class="form-group">
+        <label class="form-label">I am a...</label>
+        <div class="role-selector">
+          <div class="role-option selected" id="role-doctor" onclick="selectRole('doctor')">
+            <i class="fa fa-user-doctor" style="color:var(--cyan);"></i>
+            <span>Doctor / Specialist</span>
+          </div>
+          <div class="role-option" id="role-company" onclick="selectRole('company')">
+            <i class="fa fa-building" style="color:var(--purple);"></i>
+            <span>AI Company</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="error-msg" class="alert alert-danger" style="display:none;"></div>
+      <div id="success-msg" class="alert alert-success" style="display:none;"></div>
+
+      <form id="registerForm">
+        <input type="hidden" id="role" value="doctor" />
+
+        <div class="form-group">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="name" class="form-input" placeholder="Dr. John Smith" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="email" class="form-input" placeholder="doctor@hospital.com" required />
+        </div>
+
+        <!-- Doctor Fields -->
+        <div id="doctor-fields">
+          <div class="form-group">
+            <label class="form-label">Medical Specialty</label>
+            <select id="specialty" class="form-select">
+              <option value="">— Select Specialty —</option>
+              <option>Radiology</option>
+              <option>Dermatology</option>
+              <option>Neurology</option>
+              <option>Oncology</option>
+              <option>Ophthalmology</option>
+              <option>Cardiology</option>
+              <option>Orthopedics</option>
+              <option>Pathology</option>
+              <option>Gastroenterology</option>
+              <option>Pulmonology</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Medical License Number</label>
+            <input type="text" id="license_number" class="form-input" placeholder="LIC-123456" />
+          </div>
+        </div>
+
+        <!-- Company Fields -->
+        <div id="company-fields" style="display:none;">
+          <div class="form-group">
+            <label class="form-label">Company Name</label>
+            <input type="text" id="company_name" class="form-input" placeholder="DeepMed AI Inc." />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="password" class="form-input" placeholder="Min. 6 characters" required minlength="6" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <input type="password" id="confirm_password" class="form-input" placeholder="Re-enter password" required />
+        </div>
+
+        <div class="alert alert-info" style="font-size:0.8rem;">
+          <i class="fa fa-info-circle"></i>
+          <span id="role-notice">Doctors require admin verification before accessing the platform.</span>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" id="regBtn">
+          <span id="btn-text">Create Account</span>
+          <span id="btn-spinner" class="spinner" style="display:none;width:16px;height:16px;"></span>
+        </button>
+      </form>
+      <div class="auth-footer">
+        Already have an account? <a href="/login">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+  // Pre-select role from URL param
+  const urlParams = new URLSearchParams(window.location.search);
+  const preRole = urlParams.get('role');
+  if (preRole === 'company') selectRole('company');
+
+  function selectRole(role) {
+    document.getElementById('role').value = role;
+    document.getElementById('role-doctor').classList.toggle('selected', role === 'doctor');
+    document.getElementById('role-company').classList.toggle('selected', role === 'company');
+    document.getElementById('doctor-fields').style.display  = role === 'doctor'  ? 'block' : 'none';
+    document.getElementById('company-fields').style.display = role === 'company' ? 'block' : 'none';
+    document.getElementById('role-notice').textContent = role === 'doctor'
+      ? 'Doctors require admin verification before accessing the platform.'
+      : 'Companies are auto-approved and can start uploading images immediately.';
+  }
+
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn     = document.getElementById('regBtn');
+    const errEl   = document.getElementById('error-msg');
+    const sucEl   = document.getElementById('success-msg');
+    const role    = document.getElementById('role').value;
+    const pass    = document.getElementById('password').value;
+    const confirm = document.getElementById('confirm_password').value;
+
+    errEl.style.display = 'none';
+    sucEl.style.display = 'none';
+
+    if (pass !== confirm) {
+      errEl.textContent = 'Passwords do not match!';
+      errEl.style.display = 'flex';
+      return;
+    }
+
+    btn.disabled = true;
+    document.getElementById('btn-text').style.display = 'none';
+    document.getElementById('btn-spinner').style.display = 'inline-block';
+
+    const payload = {
+      name: document.getElementById('name').value,
+      email: document.getElementById('email').value,
+      password: pass,
+      role
+    };
+    if (role === 'doctor') {
+      payload.specialty = document.getElementById('specialty').value;
+      payload.license_number = document.getElementById('license_number').value;
+    } else {
+      payload.company_name = document.getElementById('company_name').value;
+    }
+
+    const res = await api.post('/auth/register', payload);
+
+    btn.disabled = false;
+    document.getElementById('btn-text').style.display = 'inline';
+    document.getElementById('btn-spinner').style.display = 'none';
+
+    if (res.ok) {
+      setAuth(res.data.token, res.data.user);
+      showToast('Account created! Redirecting...', 'success');
+      setTimeout(() => {
+        if (role === 'doctor')  window.location.href = '/doctor/dashboard';
+        else if (role === 'company') window.location.href = '/company/dashboard';
+      }, 800);
+    } else {
+      errEl.textContent = res.data.error || 'Registration failed';
+      errEl.style.display = 'flex';
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Review Annotations — MedAnnotate</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    body { background: #060b16; }
+    .page-layout { display: flex; height: 100vh; overflow: hidden; }
+    .main-content { padding: 30px; position: relative; z-index: 2; overflow-y: auto; flex: 1; }
+    .table-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 14px 18px; font-weight: 600; color: var(--text-secondary); font-size: 0.8rem; text-transform: uppercase; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2); }
+    td { padding: 14px 18px; color: #fff; font-size: 0.9rem; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid rgba(0,212,255,0.2); border-radius: 50%; border-top-color: var(--cyan); animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+<div class="bg-canvas"><div class="bg-orb bg-orb-3"></div></div>
+<div class="grid-lines"></div>
+
+<div class="page-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon" style="background:linear-gradient(135deg,var(--cyan),var(--purple));">🧠</div>
+      <div><div class="logo-text">MedAnnotate</div><div class="logo-sub">AI Company Portal</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="/company/dashboard" class="nav-item"><i class="fa fa-gauge"></i> Dashboard</a>
+      <a href="/company/upload" class="nav-item"><i class="fa fa-upload"></i> Upload Images</a>
+      <a href="/company/batches" class="nav-item"><i class="fa fa-layer-group"></i> My Images</a>
+      <a href="/company/review" class="nav-item active"><i class="fa fa-check-circle"></i> Review Annotations</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()"><i class="fa fa-right-from-bracket"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <header class="navbar">
+    <div class="navbar-left"><div><div class="page-title">Review Annotations</div></div></div>
+  </header>
+
+  <main class="main-content">
+    <div style="display:flex;justify-content:space-between;margin-bottom:20px;">
+      <div>
+        <h2 style="margin:0;font-size:1.4rem;">Pending Peer Review</h2>
+        <p style="color:var(--text-secondary);font-size:0.9rem;margin:4px 0 0;">Review submitted labels from doctors before approving payouts.</p>
+      </div>
+      <div>
+        <button class="btn btn-ghost" onclick="loadReviews()"><i class="fa fa-rotate"></i> Refresh</button>
+      </div>
+    </div>
+
+    <!-- Review Queue Table -->
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr><th>Image</th><th>Department</th><th>Doctor</th><th>Submitted</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="queue-tbody">
+          <tr><td colspan="5" style="text-align:center;padding:40px;"><span class="spinner"></span><p style="margin-top:10px;color:var(--text-muted)">Loading queue...</p></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</div>
+
+<!-- Annotation Detail / QA Modal -->
+<div id="qa-modal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.85);backdrop-filter:blur(8px);align-items:center;justify-content:center;">
+  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;width:700px;max-width:94vw;max-height:92vh;overflow-y:auto;padding:28px;position:relative;">
+    <button onclick="closeQaModal()" style="position:absolute;top:16px;right:16px;background:var(--bg-secondary);border:none;color:#fff;border-radius:8px;width:32px;height:32px;cursor:pointer;">✕</button>
+    <div id="qa-modal-content">Loading...</div>
+    
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.05);" id="qa-actions">
+      <label style="display:block;font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px;">Company QA Feedback (Optional)</label>
+      <textarea id="qa-comment" style="width:100%;height:80px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:8px;color:#fff;padding:12px;margin-bottom:16px;font-family:inherit;font-size:0.9rem;resize:vertical;" placeholder="Write feedback for the doctor if requesting rework..."></textarea>
+      
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-primary" style="flex:1;justify-content:center;background:var(--green);border-color:var(--green)" onclick="submitQA('approve')"><i class="fa fa-check"></i> Approve & Payout</button>
+        <button class="btn btn-ghost" style="flex:1;justify-content:center;color:var(--red);border-color:rgba(239,68,68,0.2)" onclick="submitQA('reject')"><i class="fa fa-times"></i> Reject (Revoke)</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Full Image Viewer Modal -->
+<div id="img-full-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);align-items:center;justify-content:center;flex-direction:column;">
+  <button onclick="document.getElementById('img-full-modal').style.display='none'" style="position:absolute;top:20px;right:20px;background:var(--bg-secondary);border:none;color:#fff;border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:1.1rem;display:grid;place-items:center;z-index:2">✕</button>
+  <img id="full-view-img" style="max-width:92vw;max-height:88vh;border-radius:12px;object-fit:contain;position:relative;z-index:1;" alt="" />
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+let currentAnnId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  const user = requireAuth(['company', 'admin']);
+  if (!user) return;
+  loadReviews();
+});
+
+async function loadReviews() {
+  const tbody = document.getElementById('queue-tbody');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;"><span class="spinner"></span></td></tr>';
+  
+  // We can fetch images that have status = qa_review
+  const res = await api.get('/images/');
+  if (!res.ok) { tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:red">Failed to load</td></tr>`; return; }
+  
+  const inReview = res.data.images.filter(img => img.status === 'qa_review');
+  if (inReview.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:50px;color:var(--text-muted)"><i class="fa fa-check-circle" style="font-size:2rem;opacity:0.2;display:block;margin-bottom:10px"></i>All caught up! No annotations pending review.</td></tr>';
+    return;
+  }
+  
+  tbody.innerHTML = inReview.map(img => `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:8px;background:var(--bg-secondary);overflow:hidden;border:1px solid var(--border);position:relative">
+            <img id="thumb-${img.id}" style="width:100%;height:100%;object-fit:cover;display:none" alt=""/>
+            <i class="fa fa-image" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:var(--text-muted);font-size:14px" id="icon-${img.id}"></i>
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:0.9rem">${escHtml(img.filename)}</div>
+            <div style="font-size:0.75rem;color:var(--text-secondary);font-family:monospace">${img.id.slice(-8).toUpperCase()}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge badge-cyan">${escHtml(img.department)}</span></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:rgba(0,212,255,0.1);color:var(--cyan);display:grid;place-items:center;font-size:0.7rem;font-weight:700">DR</div>
+          <span style="font-size:0.85rem">${escHtml(img.assigned_doctor_name||'Unknown')}</span>
+        </div>
+      </td>
+      <td style="color:var(--text-secondary);font-size:0.85rem">${timeAgo(img.updated_at)}</td>
+      <td>
+        <button class="btn btn-primary btn-sm" onclick="openReview('${img.id}')"><i class="fa fa-magnifying-glass"></i> Review</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Load thumbs
+  inReview.forEach(img => loadThumb(img.id));
+}
+
+async function loadThumb(id) {
+  try {
+    const token = getToken();
+    const r = await fetch(`/api/images/${id}/file`, { headers: {'Authorization': `Bearer ${token}`} });
+    if (!r.ok) return;
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const img = document.getElementById(`thumb-${id}`);
+    if(img) {
+      img.src = url; img.style.display = 'block';
+      const icon = document.getElementById(`icon-${id}`);
+      if(icon) icon.style.display = 'none';
+      img.onload = () => URL.revokeObjectURL(url);
+    }
+  } catch(e){}
+}
+
+async function openReview(imageId) {
+  const modal = document.getElementById('qa-modal');
+  const content = document.getElementById('qa-modal-content');
+  const actions = document.getElementById('qa-actions');
+  
+  modal.style.display = 'flex';
+  actions.style.display = 'none';
+  content.innerHTML = '<div style="text-align:center;padding:40px"><span class="spinner"></span></div>';
+  document.getElementById('qa-comment').value = '';
+
+  const res = await api.get(`/annotations/image/${imageId}`);
+  if (!res.ok || !res.data.annotation) {
+    content.innerHTML = '<p style="color:var(--red);text-align:center">Annotation data not found.</p>';
+    return;
+  }
+  
+  const ann = res.data.annotation;
+  currentAnnId = ann.id || ann._id;
+  
+  content.innerHTML = `
+    <h3 style="margin:0 0 16px;">Annotation Review</h3>
+    
+    <!-- Image Preview Area -->
+    <div style="position:relative;background:var(--bg-secondary);border:1px solid var(--border);border-radius:12px;margin-bottom:20px;min-height:200px;display:flex;align-items:center;justify-content:center;cursor:zoom-in;overflow:hidden" onclick="openFullImage('${imageId}')">
+      <img id="ann-modal-img" style="max-width:100%;max-height:400px;object-fit:contain;display:none" alt="" />
+      <div id="ann-img-loading" style="padding:40px;text-align:center;color:var(--text-muted)"><span class="spinner" style="display:block;margin:0 auto 10px;"></span>Loading image...</div>
+      <div style="position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);padding:4px 10px;border-radius:6px;font-size:0.75rem;color:#fff;pointer-events:none"><i class="fa fa-magnifying-glass-plus"></i> Click to enlarge</div>
+    </div>
+
+    <!-- Data Grid -->
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px;">
+      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;">Identified Labels</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${(ann.labels||[]).map(l => `<span class="badge badge-cyan" style="font-size:0.75rem">${escHtml(l)}</span>`).join('') || '<span style="color:var(--text-muted);font-size:0.85rem">None</span>'}
+        </div>
+      </div>
+      <div style="background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:8px;padding:12px;">
+        <div style="font-size:0.75rem;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;">Confidence Score</div>
+        <div style="font-size:1.2rem;font-weight:700;color:var(--cyan);">${ann.confidence||0}%</div>
+      </div>
+    </div>
+    
+    <!-- Notes -->
+    ${ann.notes ? `
+    <div style="background:rgba(0,212,255,0.05);border-left:3px solid var(--cyan);padding:14px;border-radius:0 8px 8px 0;margin-bottom:16px;">
+      <div style="font-size:0.75rem;color:var(--cyan);margin-bottom:4px;font-weight:600;">Doctor's Notes</div>
+      <div style="font-size:0.9rem;line-height:1.5;">${escHtml(ann.notes)}</div>
+    </div>` : ''}
+    
+    <!-- Download JSON -->
+    <div style="text-align:right">
+      <a href="data:text/json;charset=utf-8,${encodeURIComponent(JSON.stringify(ann, null, 2))}" download="annotation_${currentAnnId}.json" class="btn btn-ghost btn-sm"><i class="fa fa-download"></i> Download Raw JSON</a>
+    </div>
+  `;
+  
+  actions.style.display = 'block';
+  loadAnnoModalImg(imageId);
+}
+
+async function loadAnnoModalImg(imgId) {
+  const imgEl   = document.getElementById('ann-modal-img');
+  const loadEl  = document.getElementById('ann-img-loading');
+  try {
+    const token = getToken();
+    const r = await fetch(`/api/images/${imgId}/file`, { headers: {'Authorization': `Bearer ${token}`} });
+    if (!r.ok) throw new Error();
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    imgEl.src = url;
+    imgEl.style.display = 'block';
+    if (loadEl) loadEl.style.display = 'none';
+    imgEl.onload = () => URL.revokeObjectURL(url);
+  } catch(e) {
+    if (loadEl) loadEl.innerHTML = '<i class="fa fa-image" style="font-size:2rem;color:var(--text-muted);opacity:0.5;display:block;margin-bottom:8px"></i>Image unavailable';
+  }
+}
+
+async function openFullImage(imgId) {
+  const modal = document.getElementById('img-full-modal');
+  const imgEl = document.getElementById('full-view-img');
+  if (!modal || !imgEl) return;
+  imgEl.src = '';
+  modal.style.display = 'flex';
+  try {
+    const token = getToken();
+    const r = await fetch(`/api/images/${imgId}/file`, { headers: {'Authorization': `Bearer ${token}`} });
+    if (!r.ok) {
+        const errText = await r.text();
+        throw new Error(`HTTP ${r.status}: ${errText}`);
+    }
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    imgEl.src = url;
+    imgEl.onload = () => URL.revokeObjectURL(url);
+    imgEl.onerror = () => { showToast('Browser cannot render this format naturally (e.g. DICOM)', 'warning'); }
+  } catch(e) { 
+      modal.style.display = 'none'; 
+      showToast('Error loading image: ' + e.message, 'error'); 
+  }
+}
+
+function closeQaModal() {
+  document.getElementById('qa-modal').style.display = 'none';
+  currentAnnId = null;
+}
+
+async function submitQA(decision) {
+  if (!currentAnnId) return;
+  const comment = document.getElementById('qa-comment').value.trim();
+  
+  const res = await api.post(`/annotations/${currentAnnId}/qa`, { decision, comment });
+  if (res.ok) {
+    showToast(`Annotation ${decision === 'approve' ? 'approved & paid' : 'rejected'} successfully`, decision === 'approve' ? 'success' : 'warning');
+    closeQaModal();
+    loadReviews();
+  } else {
+    showToast(res.data.error || 'Failed to submit review', 'error');
+  }
+}
+</script>
+</body>
+</html>

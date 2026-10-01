@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Dashboard — MedAnnotate</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>body{background:#060b16;}</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<!-- ANIMATED BACKGROUND -->
+<div class="bg-canvas">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+  <div class="bg-orb bg-orb-4"></div>
+</div>
+<div class="grid-lines"></div>
+<canvas id="particles-canvas"></canvas>
+<div class="corner-glow-tl"></div>
+<div class="corner-glow-br"></div>
+<div class="page-layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🩺</div>
+      <div><div class="logo-text">MedAnnotate</div><div class="logo-sub">Doctor Portal</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="/doctor/dashboard" class="nav-item active"><i class="fa fa-gauge"></i> Dashboard</a>
+      <a href="/doctor/dashboard#queue" class="nav-item"><i class="fa fa-images"></i> Image Queue</a>
+      <a href="/doctor/earnings" class="nav-item"><i class="fa fa-dollar-sign"></i> Earnings & QA</a>
+      <div class="nav-section-label">Account</div>
+      <a href="#" class="nav-item" onclick="showProfile()"><i class="fa fa-user"></i> My Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div id="sidebar-doctor" style="padding:10px 8px;margin-bottom:10px;">
+        <div style="font-size:0.875rem;font-weight:600;" id="sf-name">Loading...</div>
+        <div style="font-size:0.75rem;color:var(--text-secondary);" id="sf-specialty"></div>
+        <span class="badge badge-green" style="margin-top:4px;" id="sf-badge">Loading</span>
+      </div>
+      <button class="logout-btn" onclick="logout()"><i class="fa fa-right-from-bracket"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="navbar-left">
+      <div><div class="page-title">Dashboard</div><div class="page-subtitle" id="today-date"></div></div>
+    </div>
+    <div class="navbar-right">
+      <button class="notif-btn"><i class="fa fa-bell"></i><span class="notif-badge" id="notif-count">0</span></button>
+      <div class="user-pill">
+        <div class="user-avatar" id="nav-user-avatar">DR</div>
+        <div><div class="user-name" id="nav-user-name">Doctor</div><div class="user-role" id="nav-user-role">Specialist</div></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-content">
+
+    <!-- HERO BANNER -->
+    <div class="hero-banner" id="hero-banner">
+      <div class="hero-text">
+        <h2 id="hero-greeting">Good morning 👋</h2>
+        <p id="hero-sub">Loading your dashboard...</p>
+      </div>
+      <div class="hero-actions">
+        <span class="badge badge-green"><i class="fa fa-circle-check"></i> <span id="verified-badge">Verified</span></span>
+        <a href="/doctor/dashboard#queue" class="btn btn-primary"><i class="fa fa-play"></i> Start Annotating</a>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card blue">
+        <div class="stat-info">
+          <div class="stat-value" id="stat-assigned">—</div>
+          <div class="stat-label">Assigned Images</div>
+          <div class="stat-sub">Awaiting annotation</div>
+        </div>
+        <div class="stat-icon blue"><i class="fa fa-images"></i></div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-info">
+          <div class="stat-value" id="stat-completed">—</div>
+          <div class="stat-label">Completed</div>
+          <div class="stat-sub up" id="stat-approved-sub">QA Approved</div>
+        </div>
+        <div class="stat-icon green"><i class="fa fa-circle-check"></i></div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-info">
+          <div class="stat-value" id="stat-qa">—</div>
+          <div class="stat-label">In QA Review</div>
+          <div class="stat-sub warn">Awaiting peer check</div>
+        </div>
+        <div class="stat-icon gold"><i class="fa fa-magnifying-glass"></i></div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-info">
+          <div class="stat-value" id="stat-earnings">—</div>
+          <div class="stat-label">Total Earnings</div>
+          <div class="stat-sub up" id="stat-pending">$0 pending</div>
+        </div>
+        <div class="stat-icon gold"><i class="fa fa-dollar-sign"></i></div>
+      </div>
+    </div>
+
+    <!-- TWO COLUMN LAYOUT -->
+    <div class="grid-2" style="gap:20px;">
+      <!-- IMAGE QUEUE -->
+      <div style="grid-column:1/2;">
+        <div class="section-header" id="queue">
+          <span class="section-title"><i class="fa fa-list-check"></i> My Image Queue</span>
+          <a href="#" class="card-link" onclick="loadMoreImages()">View All →</a>
+        </div>
+        <div class="image-queue" id="image-queue">
+          <div class="empty-state"><span class="spinner"></span></div>
+        </div>
+      </div>
+
+      <!-- EARNINGS CHART + QA QUEUE -->
+      <div style="grid-column:2/3;display:flex;flex-direction:column;gap:20px;">
+        <!-- Earnings Card -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fa fa-chart-bar"></i> Earnings Overview</span>
+            <a href="/doctor/earnings" class="card-link">Details →</a>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+            <div style="background:var(--bg-secondary);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:1.3rem;font-weight:800;color:var(--green);" id="earn-paid">$0</div>
+              <div style="font-size:0.72rem;color:var(--text-secondary);">Paid Out</div>
+            </div>
+            <div style="background:var(--bg-secondary);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:1.3rem;font-weight:800;color:var(--gold);" id="earn-pending">$0</div>
+              <div style="font-size:0.72rem;color:var(--text-secondary);">Pending</div>
+            </div>
+          </div>
+          <div style="height:160px;"><canvas id="earningsChart"></canvas></div>
+          <div style="margin-top:12px;">
+            <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:4px;">Weekly Goal Progress</div>
+            <div class="progress-bar"><div class="progress-fill" id="goal-bar" style="width:0%;"></div></div>
+            <div style="font-size:0.72rem;color:var(--text-muted);margin-top:4px;" id="goal-text"></div>
+          </div>
+        </div>
+
+        <!-- QA Review Queue -->
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title"><i class="fa fa-shield-halved"></i> Peer QA Queue</span>
+            <a href="/doctor/earnings" class="card-link">View All →</a>
+          </div>
+          <div id="qa-preview">
+            <div class="empty-state" style="padding:20px 0;"><i class="fa fa-shield-halved" style="font-size:1.5rem;margin-bottom:8px;"></i><p>No QA tasks pending</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RECENT ACTIVITY -->
+    <div class="card" style="margin-top:20px;">
+      <div class="card-header">
+        <span class="card-title"><i class="fa fa-clock-rotate-left"></i> Recent Activity</span>
+      </div>
+      <div class="timeline" id="activity-timeline">
+        <div class="empty-state"><span class="spinner"></span></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Full Image Viewer Modal -->
+<div id="img-full-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);align-items:center;justify-content:center;flex-direction:column;">
+  <button onclick="document.getElementById('img-full-modal').style.display='none'" style="position:absolute;top:20px;right:20px;background:var(--bg-secondary);border:none;color:#fff;border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:1.1rem;display:grid;place-items:center;z-index:2">✕</button>
+  <img id="full-view-img" style="max-width:92vw;max-height:88vh;border-radius:12px;object-fit:contain;position:relative;z-index:1;" alt="" />
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/doctor-dashboard.js"></script>
+<script>
+// Floating particles
+(function(){
+  const c = document.getElementById('particles-canvas');
+  if(!c) return;
+  const ctx = c.getContext('2d');
+  c.width = window.innerWidth; c.height = window.innerHeight;
+  window.addEventListener('resize',()=>{c.width=window.innerWidth;c.height=window.innerHeight;});
+  const particles = Array.from({length:60},()=>({
+    x: Math.random()*c.width, y: Math.random()*c.height,
+    r: Math.random()*1.5+0.3,
+    dx: (Math.random()-0.5)*0.3, dy: (Math.random()-0.5)*0.3,
+    o: Math.random()*0.4+0.1,
+    color: Math.random()>0.5?'0,212,255':'124,58,237'
+  }));
+  function draw(){
+    ctx.clearRect(0,0,c.width,c.height);
+    particles.forEach(p=>{
+      p.x+=p.dx; p.y+=p.dy;
+      if(p.x<0||p.x>c.width) p.dx*=-1;
+      if(p.y<0||p.y>c.height) p.dy*=-1;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      ctx.fillStyle=`rgba(${p.color},${p.o})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

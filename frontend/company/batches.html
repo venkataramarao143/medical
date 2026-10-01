@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Batches — MedAnnotate</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>body{background:#060b16;}
+  .filter-btn{background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);
+    padding:6px 14px;border-radius:8px;cursor:pointer;font-size:0.8rem;transition:all 0.2s;white-space:nowrap;}
+  .filter-btn:hover,.filter-btn.active{background:var(--purple);border-color:var(--purple);color:#fff;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+<div class="bg-canvas">
+  <div class="bg-orb bg-orb-1" style="background:radial-gradient(circle,rgba(124,58,237,0.2) 0%,transparent 70%)"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+  <div class="bg-orb bg-orb-4"></div>
+</div>
+<div class="grid-lines"></div>
+<canvas id="particles-canvas"></canvas>
+<div class="page-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">🤖</div>
+      <div><div class="logo-text">MedAnnotate</div><div class="logo-sub">Company Portal</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Main</div>
+      <a href="/company/dashboard" class="nav-item"><i class="fa fa-gauge"></i> Dashboard</a>
+      <a href="/company/upload"    class="nav-item"><i class="fa fa-upload"></i> Upload Images</a>
+      <a href="/company/batches"   class="nav-item active"><i class="fa fa-layer-group"></i> My Batches</a>
+      <div class="nav-section-label">Account</div>
+      <a href="#" class="nav-item" onclick="showCompanyProfile()"><i class="fa fa-building"></i> Company Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="padding:10px 8px;margin-bottom:10px">
+        <div style="font-size:0.875rem;font-weight:600" id="sf-company">Company</div>
+        <span class="badge badge-purple" style="margin-top:4px">Pro Plan</span>
+      </div>
+      <button class="logout-btn" onclick="logout()"><i class="fa fa-right-from-bracket"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+    <div class="navbar-left">
+      <div>
+        <div class="page-title">My Batches</div>
+        <div class="page-subtitle" id="today-date"></div>
+      </div>
+    </div>
+    <div class="navbar-right">
+      <a href="/company/upload" class="btn btn-purple btn-sm"><i class="fa fa-upload"></i> Upload New</a>
+      <div class="user-pill">
+        <div class="user-avatar" id="nav-user-avatar" style="background:linear-gradient(135deg,var(--purple),#5b21b6)">AI</div>
+        <div><div class="user-name" id="nav-user-name">Company</div><div class="user-role" id="nav-user-role">AI Company</div></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- FILTERS & COUNT -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="filter-btn active" data-status="" onclick="filterImages('')">
+          <i class="fa fa-list"></i> All Images
+        </button>
+        <button class="filter-btn" data-status="pending" onclick="filterImages('pending')">
+          <i class="fa fa-clock"></i> Pending
+        </button>
+        <button class="filter-btn" data-status="assigned" onclick="filterImages('assigned')">
+          <i class="fa fa-user-doctor"></i> Assigned
+        </button>
+        <button class="filter-btn" data-status="annotating" onclick="filterImages('annotating')">
+          <i class="fa fa-pen-nib"></i> Annotating
+        </button>
+        <button class="filter-btn" data-status="qa_review" onclick="filterImages('qa_review')">
+          <i class="fa fa-shield-halved"></i> QA Review
+        </button>
+        <button class="filter-btn" data-status="approved" onclick="filterImages('approved')">
+          <i class="fa fa-check-circle"></i> Approved
+        </button>
+      </div>
+      <div style="font-size:0.85rem;color:var(--text-secondary)" id="total-count">Loading...</div>
+    </div>
+
+    <!-- INFO BANNER -->
+    <div class="alert alert-warning" style="margin-bottom:20px">
+      <i class="fa fa-info-circle"></i>
+      <span>Click <b>Revoke</b> on any annotated image if you are not satisfied — it will be reassigned to a different specialist doctor.</span>
+    </div>
+
+    <!-- IMAGES TABLE -->
+    <div id="images-container">
+      <div style="text-align:center;padding:60px">
+        <span class="spinner"></span>
+        <p style="margin-top:12px;color:var(--text-muted)">Loading your images...</p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Full Image Viewer Modal -->
+<div id="img-full-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);align-items:center;justify-content:center;flex-direction:column;">
+  <button onclick="document.getElementById('img-full-modal').style.display='none'" style="position:absolute;top:20px;right:20px;background:var(--bg-secondary);border:none;color:#fff;border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:1.1rem;display:grid;place-items:center;z-index:2">✕</button>
+  <img id="full-view-img" style="max-width:92vw;max-height:88vh;border-radius:12px;object-fit:contain;position:relative;z-index:1;" alt="" />
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/company-batches.js"></script>
+<script src="/js/particles.js"></script>
+<script>
+function showCompanyProfile() {
+  api.get('/auth/me').then(res => {
+    if (!res?.ok) return;
+    const u = res.data;
+    const modal = document.createElement('div');
+    modal.style.cssText='position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px)';
+    modal.innerHTML=`<div style="background:var(--bg-card);border:1px solid var(--border);border-radius:20px;padding:32px;width:420px;max-width:90vw;position:relative">
+      <button onclick="this.closest('[style*=fixed]').remove()" style="position:absolute;top:16px;right:16px;background:var(--bg-secondary);border:none;color:var(--text-primary);border-radius:8px;width:32px;height:32px;cursor:pointer">✕</button>
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--purple),#5b21b6);display:grid;place-items:center;font-size:1.6rem;font-weight:800;color:#fff;margin:0 auto 12px">${(u.name||'C').slice(0,2).toUpperCase()}</div>
+        <h2 style="margin:0 0 4px">${u.company_name||u.name}</h2>
+        <div style="color:var(--purple);font-size:0.875rem">${u.email}</div>
+        <span class="badge badge-purple" style="margin-top:8px;display:inline-flex">AI Company</span>
+      </div>
+      <div style="display:grid;gap:10px">
+        <div style="background:var(--bg-secondary);border-radius:8px;padding:12px;border:1px solid var(--border)"><div style="font-size:0.72rem;color:var(--text-muted)">Member Since</div><div style="font-weight:600">${formatDate(u.created_at)}</div></div>
+        <div style="background:var(--bg-secondary);border-radius:8px;padding:12px;border:1px solid var(--border)"><div style="font-size:0.72rem;color:var(--text-muted)">Email</div><div style="font-weight:600">${u.email}</div></div>
+        ${u.website?`<div style="background:var(--bg-secondary);border-radius:8px;padding:12px;border:1px solid var(--border)"><div style="font-size:0.72rem;color:var(--text-muted)">Website</div><a href="${u.website}" style="color:var(--cyan)">${u.website}</a></div>`:''}
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e=>{if(e.target===modal)modal.remove();});
+  });
+}
+</script>
+</body>
+</html>

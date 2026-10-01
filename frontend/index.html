@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedAnnotate — Medical Image Annotation Platform</title>
+  <meta name="description" content="Where AI companies and specialist doctors collaborate to create Gold Standard medical training data." />
+  <link rel="stylesheet" href="/css/main.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+  <!-- NAVBAR -->
+  <nav style="position:fixed;top:0;left:0;right:0;z-index:100;padding:0 40px;height:64px;background:rgba(8,13,26,0.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:space-between;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="logo-icon">🩺</div>
+      <div>
+        <div class="logo-text">MedAnnotate</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:center;">
+      <a href="/login" class="btn btn-ghost btn-sm">Login</a>
+      <a href="/register" class="btn btn-primary btn-sm">Get Started</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="landing-hero" style="margin-top:64px;">
+    <div class="landing-badge"><i class="fa fa-shield-halved"></i> HIPAA-Safe • Anonymized • Gold Standard Data</div>
+    <h1 class="landing-title">
+      AI-Powered Medical<br /><span>Image Annotation</span><br />Platform
+    </h1>
+    <p class="landing-desc">
+      AI companies upload raw medical images. Verified specialist doctors annotate them with precision. 
+      Peer-reviewed for 100% accuracy. Doctors get paid per image.
+    </p>
+    <div class="landing-ctas">
+      <a href="/register?role=company" class="btn btn-purple btn-lg"><i class="fa fa-building"></i> I'm an AI Company</a>
+      <a href="/register?role=doctor" class="btn btn-primary btn-lg"><i class="fa fa-user-doctor"></i> I'm a Doctor</a>
+    </div>
+
+    <!-- STATS ROW -->
+    <div style="display:flex;gap:40px;margin-top:60px;padding:24px 40px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);flex-wrap:wrap;justify-content:center;">
+      <div style="text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--cyan);">94K+</div>
+        <div style="font-size:0.8rem;color:var(--text-secondary);">Images Annotated</div>
+      </div>
+      <div style="width:1px;background:var(--border);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--purple);">342</div>
+        <div style="font-size:0.8rem;color:var(--text-secondary);">Verified Specialists</div>
+      </div>
+      <div style="width:1px;background:var(--border);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--green);">28</div>
+        <div style="font-size:0.8rem;color:var(--text-secondary);">AI Companies</div>
+      </div>
+      <div style="width:1px;background:var(--border);"></div>
+      <div style="text-align:center;">
+        <div style="font-size:1.8rem;font-weight:800;color:var(--gold);">100%</div>
+        <div style="font-size:0.8rem;color:var(--text-secondary);">Peer-Reviewed</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section style="max-width:1100px;margin:0 auto;padding:80px 20px;">
+    <div style="text-align:center;margin-bottom:48px;">
+      <h2 style="font-size:2rem;margin-bottom:8px;">How It Works</h2>
+      <p>A fully automated pipeline from raw image to Gold Standard training data</p>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--purple-dim);color:var(--purple);">📤</div>
+        <h3>1. Upload Images</h3>
+        <p>AI companies bulk-upload raw medical images. Our platform auto-detects department (X-ray → Radiology, etc.) and anonymizes all patient data.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--cyan-dim);color:var(--cyan);">🎯</div>
+        <h3>2. Smart Assignment</h3>
+        <p>Images are pushed to verified specialists matching the department — Radiologists for X-rays, Dermatologists for skin scans, and so on.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(245,158,11,0.15);color:var(--gold);">✏️</div>
+        <h3>3. Expert Annotation</h3>
+        <p>Doctors use professional canvas tools to circle tumors, mark fractures, highlight anomalies, and add clinical labels.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(249,115,22,0.12);color:var(--orange);">🔍</div>
+        <h3>4. Peer QA Review</h3>
+        <p>A second verified specialist reviews each annotation. Only 100% approved annotations move forward.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--green-dim);color:var(--green);">💰</div>
+        <h3>5. Doctor Gets Paid</h3>
+        <p>Upon approval, the annotating doctor earns $4 per image (configurable). Transparent, per-image compensation.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:var(--purple-dim);color:var(--purple);">📦</div>
+        <h3>6. Gold Standard Data</h3>
+        <p>AI companies download annotated datasets in COCO JSON, Pascal VOC, or YOLO format — ready to train models.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PORTAL SPLIT -->
+  <section style="max-width:1100px;margin:0 auto;padding:0 20px 80px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+      <div class="card" style="border-top:3px solid var(--cyan);padding:32px;">
+        <div style="font-size:2rem;margin-bottom:16px;">🩺</div>
+        <h2 style="margin-bottom:8px;">For Doctors</h2>
+        <p style="margin-bottom:20px;line-height:1.8;">Register with your specialty and license. Get images matching your field. Annotate, earn per image, and build your professional portfolio.</p>
+        <ul style="list-style:none;margin-bottom:24px;display:flex;flex-direction:column;gap:8px;">
+          <li style="font-size:0.875rem;color:var(--text-secondary);display:flex;gap:8px;align-items:center;"><span style="color:var(--green);">✓</span> Professional canvas annotation tools</li>
+          <li style="font-size:0.875rem;color:var(--text-secondary);display:flex;gap:8px;align-items:center;"><span style="color:var(--green);">✓</span> $4 per approved annotation</li>
+          <li style="font-size:0.875rem;color:var(--text-secondary);display:flex;gap:8px;align-items:center;"><span style="color:var(--green);">✓</span> Flexible — annotate on your schedule</li>
+          <li style="font-size:0.875rem;color:var(--text-secondary);display:flex;gap:8px;align-items:center;"><span style="color:var(--green);">✓</span> Real-time earnings dashboard</li>
+        </ul>
+        <a href="/register?role=doctor" class="btn btn-primary">Register as Doctor</a>
+      </div>
+      <div class="card" style="border-top:3px solid var(--purple);padding:32px;">
+        <div style="font-size:2rem;margin-bottom:16px;">🤖</div>
+        <h2 style="margin-bottom:8px;">For AI Companies</h2>
+        <p style="margin-bottom:20px;line-height:1.8;">Upload thousands of medical images. Get them annotated by board-certified specialists. Download Gold Standard datasets for model training.</p>
+        <ul style="list-style:none;margin-bottom:24px;display:flex;flex-direction:column;gap:8px;">
+          <li style="font-size:0.875rem;color:var(--text-secondary);display:flex;gap:8px;align-items:center;"><span style="color:var(--purple);">✓</span> Bulk upload + auto-department detection</li>
+          <li style="font-size:0.875rem;color:var(--text-secondary);display:flex;gap:8px;align-items:center;"><span style="color:var(--purple);">✓</span> 100% peer-QA verified annotations</li>
+          <li style="font-size:0.875rem;color:var(--text-secondary);display:flex;gap:8px;align-items:center;"><span style="color:var(--purple);">✓</span> COCO JSON / Pascal VOC / YOLO export</li>
+          <li style="font-size:0.875rem;color:var(--text-secondary);display:flex;gap:8px;align-items:center;"><span style="color:var(--purple);">✓</span> Real-time batch progress tracking</li>
+        </ul>
+        <a href="/register?role=company" class="btn btn-purple">Register as Company</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="border-top:1px solid var(--border);padding:24px 40px;display:flex;align-items:center;justify-content:space-between;color:var(--text-muted);font-size:0.8rem;">
+    <div style="display:flex;align-items:center;gap:8px;">🩺 <strong style="color:var(--text-secondary);">MedAnnotate</strong> — Gold Standard Medical AI Data</div>
+    <div>© 2026 MedAnnotate. All rights reserved.</div>
+  </footer>
+
+  <script>
+    // Redirect if already logged in
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    if (token && user) {
+      const u = JSON.parse(user);
+      if (u.role === 'doctor') window.location.href = '/doctor/dashboard';
+      else if (u.role === 'company') window.location.href = '/company/dashboard';
+      else if (u.role === 'admin') window.location.href = '/admin/dashboard';
+    }
+  </script>
+</body>
+</html>

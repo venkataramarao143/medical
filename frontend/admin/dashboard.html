@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — MedAnnotate</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>body{background:#060b16;}</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<!-- ANIMATED BACKGROUND -->
+<div class="bg-canvas" style="background:radial-gradient(ellipse at 10% 15%, rgba(239,68,68,0.05) 0%, transparent 45%), radial-gradient(ellipse at 90% 85%, rgba(124,58,237,0.06) 0%, transparent 45%), #060b16;">
+  <div class="bg-orb bg-orb-1" style="background:radial-gradient(circle, rgba(239,68,68,0.1) 0%, transparent 70%);"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3" style="background:radial-gradient(circle, rgba(245,158,11,0.06) 0%, transparent 70%);"></div>
+  <div class="bg-orb bg-orb-4"></div>
+</div>
+<div class="grid-lines"></div>
+<canvas id="particles-canvas"></canvas>
+<div class="corner-glow-tl" style="background:radial-gradient(ellipse at top left, rgba(239,68,68,0.07) 0%, transparent 70%);"></div>
+<div class="corner-glow-br"></div>
+<div class="page-layout">
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon" style="background:linear-gradient(135deg,var(--red),#dc2626);">🛡️</div>
+      <div><div class="logo-text">MedAnnotate</div><div class="logo-sub">Admin Panel</div></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Platform</div>
+      <a href="/admin/dashboard" class="nav-item active"><i class="fa fa-gauge"></i> Overview</a>
+      <a href="#" class="nav-item" onclick="showSection('doctors')"><i class="fa fa-user-doctor"></i> Doctor Management</a>
+      <a href="#" class="nav-item" onclick="showSection('companies')"><i class="fa fa-building"></i> Companies</a>
+      <a href="#" class="nav-item" onclick="showSection('payouts')"><i class="fa fa-dollar-sign"></i> Payout Center</a>
+      <a href="#" class="nav-item" onclick="showSection('images')"><i class="fa fa-images"></i> Image Review</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="padding:10px 8px;margin-bottom:8px;">
+        <div style="font-size:0.875rem;font-weight:600;">Super Admin</div>
+        <span class="badge badge-red" style="margin-top:4px;font-size:0.65rem;">🛡️ Admin</span>
+      </div>
+      <button class="logout-btn" onclick="logout()"><i class="fa fa-right-from-bracket"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <header class="navbar">
+    <div class="navbar-left"><div><div class="page-title">Admin Overview</div><div class="page-subtitle" id="today-date"></div></div></div>
+    <div class="navbar-right">
+      <div style="display:flex;align-items:center;gap:6px;font-size:0.8rem;">
+        <div style="width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;"></div>
+        All Systems Operational
+      </div>
+      <button class="notif-btn"><i class="fa fa-bell"></i><span class="notif-badge" id="notif-count">0</span></button>
+      <div class="user-pill"><div class="user-avatar" id="nav-user-avatar" style="background:linear-gradient(135deg,var(--red),#dc2626);">AD</div><div><div class="user-name" id="nav-user-name">Admin</div><div class="user-role" id="nav-user-role">Super Admin</div></div></div>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- ALERT BANNER -->
+    <div class="alert alert-warning" id="pending-alert" style="display:none;">
+      <i class="fa fa-triangle-exclamation"></i>
+      <span id="pending-alert-text">Loading...</span>
+      <button onclick="showSection('doctors')" style="margin-left:auto;" class="btn btn-ghost btn-sm">Review Now →</button>
+    </div>
+
+    <!-- STATS 6-GRID -->
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);" id="stats-grid">
+      <div class="stat-card blue"><div class="stat-info"><div class="stat-value" id="stat-doctors">—</div><div class="stat-label">Registered Doctors</div><div class="stat-sub" id="stat-v-doctors">0 verified</div></div><div class="stat-icon blue"><i class="fa fa-user-doctor"></i></div></div>
+      <div class="stat-card purple"><div class="stat-info"><div class="stat-value" id="stat-companies">—</div><div class="stat-label">AI Companies</div></div><div class="stat-icon purple"><i class="fa fa-building"></i></div></div>
+      <div class="stat-card blue"><div class="stat-info"><div class="stat-value" id="stat-images">—</div><div class="stat-label">Total Images</div></div><div class="stat-icon blue"><i class="fa fa-image"></i></div></div>
+      <div class="stat-card gold"><div class="stat-info"><div class="stat-value" id="stat-payouts">—</div><div class="stat-label">Pending Payouts</div><div class="stat-sub warn" id="stat-payout-count">0 doctors</div></div><div class="stat-icon gold"><i class="fa fa-dollar-sign"></i></div></div>
+      <div class="stat-card green"><div class="stat-info"><div class="stat-value" id="stat-today">—</div><div class="stat-label">Annotations Today</div></div><div class="stat-icon green"><i class="fa fa-pen-nib"></i></div></div>
+      <div class="stat-card red"><div class="stat-info"><div class="stat-value" id="stat-pending-verify">—</div><div class="stat-label">Pending Verifications</div><div class="stat-sub warn">Doctor approvals needed</div></div><div class="stat-icon red"><i class="fa fa-clock"></i></div></div>
+    </div>
+
+    <!-- SECTION: OVERVIEW (default) -->
+    <div id="section-overview">
+      <div class="grid-2" style="gap:20px;">
+        <!-- Doctor Verification Queue -->
+        <div>
+          <div class="section-header"><span class="section-title"><i class="fa fa-user-check"></i> Doctor Verification Queue</span><a href="#" class="card-link" onclick="showSection('doctors')">View All →</a></div>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Doctor</th><th>Specialty</th><th>License</th><th>Applied</th><th>Actions</th></tr></thead>
+              <tbody id="verify-tbody"><tr><td colspan="5" style="text-align:center;padding:24px;"><span class="spinner"></span></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Payout Table -->
+        <div>
+          <div class="section-header"><span class="section-title"><i class="fa fa-money-bill-wave"></i> Pending Payouts</span><a href="#" class="card-link" onclick="showSection('payouts')">View All →</a></div>
+          <div class="table-container">
+            <table>
+              <thead><tr><th>Doctor</th><th>Specialty</th><th>Amount</th><th>Action</th></tr></thead>
+              <tbody id="payouts-tbody"><tr><td colspan="4" style="text-align:center;padding:24px;"><span class="spinner"></span></td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Chart -->
+      <div class="card" style="margin-top:20px;">
+        <div class="card-header"><span class="card-title"><i class="fa fa-chart-area"></i> 7-Day Platform Activity</span></div>
+        <div style="height:200px;"><canvas id="activityChart"></canvas></div>
+      </div>
+    </div>
+
+    <!-- SECTION: DOCTORS -->
+    <div id="section-doctors" style="display:none;">
+      <div class="section-header"><span class="section-title"><i class="fa fa-user-doctor"></i> All Doctors</span>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="loadDoctors('false')">Pending Only</button>
+          <button class="btn btn-ghost btn-sm" onclick="loadDoctors('')">All</button>
+        </div>
+      </div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Name</th><th>Specialty</th><th>License</th><th>Status</th><th>Earnings</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="doctors-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECTION: PAYOUTS -->
+    <div id="section-payouts" style="display:none;">
+      <div class="section-header"><span class="section-title"><i class="fa fa-dollar-sign"></i> Payout Center</span></div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Doctor</th><th>Specialty</th><th>Image</th><th>Amount</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody id="all-payouts-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECTION: COMPANIES -->
+    <div id="section-companies" style="display:none;">
+      <div class="section-header"><span class="section-title"><i class="fa fa-building"></i> All Companies</span></div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Company</th><th>Email</th><th>Images</th><th>Joined</th></tr></thead>
+          <tbody id="companies-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECTION: IMAGES -->
+    <div id="section-images" style="display:none;">
+      <div class="section-header"><span class="section-title"><i class="fa fa-images"></i> Image Review</span></div>
+      <div class="table-container">
+        <table>
+          <thead><tr><th>Image</th><th>Department</th><th>Company</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead>
+          <tbody id="admin-images-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- Full Image Viewer Modal -->
+<div id="img-full-modal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.92);backdrop-filter:blur(12px);align-items:center;justify-content:center;flex-direction:column;">
+  <button onclick="document.getElementById('img-full-modal').style.display='none'" style="position:absolute;top:20px;right:20px;background:var(--bg-secondary);border:none;color:#fff;border-radius:8px;width:38px;height:38px;cursor:pointer;font-size:1.1rem;display:grid;place-items:center;z-index:2">✕</button>
+  <img id="full-view-img" style="max-width:92vw;max-height:88vh;border-radius:12px;object-fit:contain;position:relative;z-index:1;" alt="" />
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/admin-dashboard.js"></script>
+<script src="/js/particles.js"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — MedAnnotate</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>body{background:#060b16;}</style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+</head>
+<body>
+<div class="bg-canvas">
+  <div class="bg-orb bg-orb-1"></div>
+  <div class="bg-orb bg-orb-2"></div>
+  <div class="bg-orb bg-orb-3"></div>
+</div>
+<div class="grid-lines"></div>
+<canvas id="particles-canvas"></canvas>
+<div class="auth-page">
+  <div class="auth-container">
+    <div class="auth-logo">
+      <div class="logo-icon" style="width:52px;height:52px;font-size:1.6rem;margin:0 auto 12px;border-radius:14px;background:linear-gradient(135deg,var(--cyan),var(--purple));display:grid;place-items:center;">🩺</div>
+      <h1>MedAnnotate</h1>
+      <p>Medical Image Annotation Platform</p>
+    </div>
+    <div class="auth-card">
+      <h2>Welcome back</h2>
+      <p style="margin-bottom:24px;">Sign in to your account</p>
+      <div id="error-msg" class="alert alert-danger" style="display:none;"></div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <input type="email" id="email" class="form-input" placeholder="doctor@hospital.com" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div style="position:relative;">
+            <input type="password" id="password" class="form-input" placeholder="••••••••" required style="padding-right:40px;" />
+            <button type="button" onclick="togglePwd()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;"><i class="fa fa-eye" id="pwd-eye"></i></button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:8px;" id="loginBtn">
+          <span id="btn-text">Sign In</span>
+          <span id="btn-spinner" class="spinner" style="display:none;width:16px;height:16px;"></span>
+        </button>
+      </form>
+      <div class="auth-footer">
+        Don't have an account? <a href="/register">Create account</a>
+      </div>
+      <div class="auth-footer" style="margin-top:8px;">
+        <a href="/" style="color:var(--text-muted);font-size:0.8rem;">← Back to home</a>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/js/api.js"></script>
+<script>
+  // Already logged in?
+  const existingToken = localStorage.getItem('token');
+  const existingUser  = localStorage.getItem('user');
+  if (existingToken && existingUser) {
+    const u = JSON.parse(existingUser);
+    if (u.role === 'doctor') window.location.href = '/doctor/dashboard';
+    else if (u.role === 'company') window.location.href = '/company/dashboard';
+    else if (u.role === 'admin')   window.location.href = '/admin/dashboard';
+  }
+
+  function togglePwd() {
+    const p = document.getElementById('password');
+    const e = document.getElementById('pwd-eye');
+    if (p.type === 'password') { p.type = 'text'; e.className = 'fa fa-eye-slash'; }
+    else { p.type = 'password'; e.className = 'fa fa-eye'; }
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn     = document.getElementById('loginBtn');
+    const errEl   = document.getElementById('error-msg');
+    const btnText = document.getElementById('btn-text');
+    const spinner = document.getElementById('btn-spinner');
+
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btnText.style.display = 'none';
+    spinner.style.display = 'inline-block';
+
+    const res = await api.post('/auth/login', {
+      email:    document.getElementById('email').value,
+      password: document.getElementById('password').value
+    });
+
+    btn.disabled = false;
+    btnText.style.display = 'inline';
+    spinner.style.display = 'none';
+
+    if (res.ok) {
+      setAuth(res.data.token, res.data.user);
+      showToast('Welcome back, ' + res.data.user.name + '!', 'success');
+      setTimeout(() => {
+        const role = res.data.user.role;
+        if (role === 'doctor')  window.location.href = '/doctor/dashboard';
+        else if (role === 'company') window.location.href = '/company/dashboard';
+        else if (role === 'admin')   window.location.href = '/admin/dashboard';
+      }, 600);
+    } else {
+      errEl.textContent = res.data.error || 'Login failed';
+      errEl.style.display = 'flex';
+    }
+  });
+</script>
+<script src="/js/particles.js"></script>
+</body>
+</html>

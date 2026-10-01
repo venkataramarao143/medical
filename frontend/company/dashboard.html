@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Company Dashboard — MedAnnotate</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <style>
+    body {
+      background: #060b16;
+    }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+
+<body>
+  <!-- ANIMATED BACKGROUND -->
+  <div class="bg-canvas"
+    style="background:radial-gradient(ellipse at 15% 20%, rgba(124,58,237,0.07) 0%, transparent 45%), radial-gradient(ellipse at 85% 80%, rgba(0,212,255,0.06) 0%, transparent 45%), #060b16;">
+    <div class="bg-orb bg-orb-1" style="background:radial-gradient(circle, rgba(124,58,237,0.2) 0%, transparent 70%);">
+    </div>
+    <div class="bg-orb bg-orb-2" style="background:radial-gradient(circle, rgba(0,212,255,0.14) 0%, transparent 70%);">
+    </div>
+    <div class="bg-orb bg-orb-3"></div>
+    <div class="bg-orb bg-orb-4"></div>
+  </div>
+  <div class="grid-lines"></div>
+  <canvas id="particles-canvas"></canvas>
+  <div class="corner-glow-tl"
+    style="background:radial-gradient(ellipse at top left, rgba(124,58,237,0.1) 0%, transparent 70%);"></div>
+  <div class="corner-glow-br"></div>
+  <div class="page-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon">🤖</div>
+        <div>
+          <div class="logo-text">MedAnnotate</div>
+          <div class="logo-sub">Company Portal</div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="/company/dashboard" class="nav-item active"><i class="fa fa-gauge"></i> Dashboard</a>
+        <a href="/company/upload" class="nav-item"><i class="fa fa-upload"></i> Upload Images</a>
+        <a href="/company/batches" class="nav-item"><i class="fa fa-layer-group"></i> My Images</a>
+        <a href="/company/review" class="nav-item"><i class="fa fa-check-circle"></i> Review Annotations</a>
+        <div class="nav-section-label">Account</div>
+        <a href="#" class="nav-item"><i class="fa fa-building"></i> Company Profile</a>
+        <a href="#" class="nav-item"><i class="fa fa-gear"></i> Settings</a>
+      </nav>
+      <div class="sidebar-footer">
+        <div style="padding:10px 8px;margin-bottom:10px;">
+          <div style="font-size:0.875rem;font-weight:600;" id="sf-company">Company Name</div>
+          <span class="badge badge-purple" style="margin-top:4px;">Pro Plan</span>
+        </div>
+        <button class="logout-btn" onclick="logout()"><i class="fa fa-right-from-bracket"></i> Sign Out</button>
+      </div>
+    </aside>
+
+    <header class="navbar">
+      <div class="navbar-left">
+        <div>
+          <div class="page-title">Company Dashboard</div>
+          <div class="page-subtitle" id="today-date"></div>
+        </div>
+      </div>
+      <div class="navbar-right">
+        <a href="/company/upload" class="btn btn-purple btn-sm"><i class="fa fa-upload"></i> Upload New Batch</a>
+        <div class="user-pill">
+          <div class="user-avatar" id="nav-user-avatar"
+            style="background:linear-gradient(135deg,var(--purple),#5b21b6);">AI</div>
+          <div>
+            <div class="user-name" id="nav-user-name">Company</div>
+            <div class="user-role" id="nav-user-role">AI Company</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <!-- HERO -->
+      <div class="hero-banner" style="background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(0,212,255,0.08));">
+        <div class="hero-text">
+          <h2 id="hero-greeting">Welcome back 👋</h2>
+          <p id="hero-sub">Loading your dashboard...</p>
+        </div>
+        <div class="hero-actions">
+          <span class="badge badge-green" id="ready-badge"><i class="fa fa-download"></i> 0 images ready</span>
+          <a href="/company/batches" class="btn btn-green"><i class="fa fa-download"></i> Download Ready Data</a>
+          <a href="/company/upload" class="btn btn-purple"><i class="fa fa-upload"></i> Upload Images</a>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-grid">
+        <div class="stat-card purple">
+          <div class="stat-info">
+            <div class="stat-value" id="stat-uploaded">—</div>
+            <div class="stat-label">Total Uploaded</div>
+            <div class="stat-sub up" id="stat-uploaded-sub">images</div>
+          </div>
+          <div class="stat-icon purple"><i class="fa fa-upload"></i></div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-info">
+            <div class="stat-value" id="stat-annotating">—</div>
+            <div class="stat-label">In Annotation</div>
+            <div class="stat-sub">Active jobs</div>
+          </div>
+          <div class="stat-icon blue"><i class="fa fa-pen-nib"></i></div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-info">
+            <div class="stat-value" id="stat-approved">—</div>
+            <div class="stat-label">QA Approved</div>
+            <div class="stat-sub up">Verified annotations</div>
+          </div>
+          <div class="stat-icon green"><i class="fa fa-shield-halved"></i></div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-info">
+            <div class="stat-value" id="stat-download">—</div>
+            <div class="stat-label">Ready to Download</div>
+            <div class="stat-sub warn">Awaiting export</div>
+          </div>
+          <div class="stat-icon gold"><i class="fa fa-download"></i></div>
+        </div>
+      </div>
+
+      <div class="grid-2" style="gap:20px;">
+        <!-- ACTIVE BATCHES TABLE -->
+        <div style="grid-column:1/2;">
+          <div class="section-header">
+            <span class="section-title"><i class="fa fa-layer-group"></i> Active Batches</span>
+            <a href="/company/batches" class="card-link">View All →</a>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Batch</th>
+                  <th>Department</th>
+                  <th>Progress</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="batches-tbody">
+                <tr>
+                  <td colspan="5" style="text-align:center;padding:32px;"><span class="spinner"></span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:12px;"><a href="/company/upload" class="btn btn-purple"
+              style="width:100%;justify-content:center;"><i class="fa fa-plus"></i> Upload New Batch</a></div>
+        </div>
+
+        <!-- RIGHT CHARTS -->
+        <div style="grid-column:2/3;display:flex;flex-direction:column;gap:20px;">
+          <!-- Quick Upload -->
+          <div class="card" style="border:2px dashed var(--border);cursor:pointer;"
+            onclick="window.location.href='/company/upload'" onmouseenter="this.style.borderColor='var(--purple)'"
+            onmouseleave="this.style.borderColor='var(--border)'">
+            <div style="text-align:center;padding:20px 0;">
+              <i class="fa fa-cloud-arrow-up"
+                style="font-size:2.5rem;color:var(--purple);margin-bottom:12px;display:block;"></i>
+              <h3 style="margin-bottom:6px;">Quick Upload</h3>
+              <p style="font-size:0.85rem;">Click to upload a new batch of medical images</p>
+              <div class="btn btn-purple" style="margin-top:16px;display:inline-flex;"><i class="fa fa-upload"></i>
+                Upload Images</div>
+            </div>
+          </div>
+
+          <!-- Completion Donut -->
+          <div class="card">
+            <div class="card-header"><span class="card-title"><i class="fa fa-chart-pie"></i> Annotation Status</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div style="height:160px;flex:1;"><canvas id="statusDonut"></canvas></div>
+              <div id="donut-legend" style="min-width:120px;"></div>
+            </div>
+          </div>
+
+          <!-- Dept Stats -->
+          <div class="card">
+            <div class="card-header"><span class="card-title"><i class="fa fa-chart-bar"></i> By Department</span></div>
+            <div style="height:160px;"><canvas id="deptChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/company-dashboard.js"></script>
+  <script src="/js/particles.js"></script>
+</body>
+
+</html>
